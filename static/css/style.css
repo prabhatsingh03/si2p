@@ -1,0 +1,676 @@
+/* === MODERN SAAS DESIGN SYSTEM (PREMIUM) === */
+:root {
+    /* === PREMIUM BRAND PALETTE === */
+    /* Royal Blue Data Stream */
+    --primary-blue: #2563EB;
+    /* Vibrant Blue */
+    --primary-blue-dark: #1E3A8A;
+    /* Deep Navy */
+    --primary-blue-light: #60A5FA;
+    /* Sky Blue */
+    --accent-glow: #3B82F6;
+    /* Glow effects */
+
+    /* Executive Gold & Silver */
+    --gold-primary: #F59E0B;
+    --gold-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    --silver-primary: #64748B;
+    --silver-gradient: linear-gradient(135deg, #F1F5F9 0%, #CBD5E1 100%);
+
+    /* Surface & Backgrounds */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F8FAFC;
+    /* Very light slate */
+    --bg-tertiary: #F1F5F9;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.5);
+
+    /* Typography */
+    --text-primary: #0F172A;
+    /* Slate 900 */
+    --text-secondary: #475569;
+    /* Slate 600 */
+    --text-tertiary: #94A3B8;
+    /* Slate 400 */
+
+    /* Modern Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-glow: 0 0 15px rgba(37, 99, 235, 0.15);
+
+    /* Animation */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Legacy Maps */
+    --gray-50: #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-400: #94A3B8;
+    --gray-900: #0F172A;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background: var(--bg-secondary);
+    color: var(--gray-900);
+    -webkit-font-smoothing: antialiased;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === SKELETON LOADING ANIMATION === */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, #f1f5f9 4%, #e2e8f0 25%, #f1f5f9 36%);
+    background-size: 1000px 100%;
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slideUp {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === CARD SYSTEM === */
+.antigravity-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--gray-200);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.antigravity-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-blue-light);
+}
+
+/* Glass Panel */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+}
+
+/* Leaderboard Cards */
+.gold-card {
+    background: linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%);
+    border: 1px solid #FCD34D;
+    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.1);
+}
+
+.gold-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--gold-gradient);
+}
+
+.silver-card {
+    background: linear-gradient(135deg, #F9FAFB 0%, #FFFFFF 100%);
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 10px 15px -3px rgba(156, 163, 175, 0.1);
+}
+
+.silver-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--silver-gradient);
+}
+
+.bronze-card {
+    background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
+    border: 1px solid #FDBA74;
+    box-shadow: 0 10px 15px -3px rgba(194, 65, 12, 0.1);
+}
+
+.bronze-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--bronze-gradient);
+}
+
+/* === MODERN BUTTON SYSTEM === */
+.btn-premium {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-dark));
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.05);
+}
+
+.btn-premium:active {
+    transform: translateY(0);
+}
+
+/* === FORM ELEMENTS === */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* === STATUS BADGES === */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+/* === UTILITIES === */
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.highlight-row {
+    animation: pulse-glow 2s infinite;
+}
+
+/* Table Styles */
+table {
+    table-layout: auto;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+table th {
+    vertical-align: middle;
+    text-align: left;
+    white-space: nowrap;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-100);
+    color: var(--gray-600);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+table td {
+    vertical-align: middle;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+    font-size: 0.95rem;
+}
+
+table tr:last-child td {
+    border-bottom: none;
+}
+
+table tr:hover td {
+    background: var(--gray-50);
+}
+
+/* === CEO DASHBOARD LABEL === */
+.ceo-dashboard-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0.75rem;
+    background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3), 0 0 20px rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    animation: subtle-glow 3s ease-in-out infinite;
+}
+
+@keyframes subtle-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3), 0 0 20px rgba(251, 191, 36, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4), 0 0 25px rgba(251, 191, 36, 0.25);
+    }
+}
+
+.ceo-dashboard-label-text {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #FBBF24;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+}
+
+.ceo-crown-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.5));
+}
+
+/* === LOGIN SCREEN STYLES === */
+:root {
+    --primary-color: #003366;
+    /* Deep Blue */
+    --secondary-color: #f4f7fc;
+    /* Light background */
+    --text-color: #333;
+    --intro-text-color: #ffffff;
+    --accent-color: #e8980d;
+    /* Gold/Orange accent */
+    --shadow-color: rgba(0, 51, 102, 0.2);
+}
+
+.login-page-container {
+    font-family: 'Poppins', sans-serif;
+}
+
+.login-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+/* --- Left Column: Login Form --- */
+.login-form-container {
+    flex-basis: 45%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: var(--secondary-color);
+    background-image: url('https://www.transparenttextures.com/patterns/light-sketch.png');
+    transition: flex-basis 0.5s ease;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    background: var(--glass-bg);
+    padding: 40px;
+    border-radius: 1.5rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glass-shadow-hover);
+    border: 1px solid var(--glass-border);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-box:hover {
+    transform: translateY(-4px);
+}
+
+.login-logo {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    height: 80px;
+    width: auto;
+    margin-bottom: 25px;
+}
+
+.login-box h1 {
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.login-box .login-prompt {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--accent-sky);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--primary-color), #00509e);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 51, 102, 0.3);
+}
+
+.btn-login:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 51, 102, 0.4);
+}
+
+.btn-login:active {
+    transform: scale(0.95);
+}
+
+/* --- Right Column: Introduction --- */
+.login-intro-container {
+    flex-basis: 55%;
+    background-image: linear-gradient(135deg, rgba(0, 40, 80, 0.85), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1542744095-291d1f67b221?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    color: var(--intro-text-color);
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: flex-basis 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-intro-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(56, 189, 248, 0.1), rgba(99, 102, 241, 0.1));
+    animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: translateX(0);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: translateX(10px);
+    }
+}
+
+.intro-content {
+    position: relative;
+    z-index: 1;
+}
+
+.intro-content h2 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
+    line-height: 1.2;
+}
+
+.intro-content h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-top: 35px;
+    margin-bottom: 18px;
+    border-left: 4px solid var(--accent-color);
+    padding-left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(232, 152, 13, 0.2);
+    border-radius: 8px;
+    font-size: 18px;
+}
+
+.intro-content p,
+.intro-content li {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.intro-content ul {
+    list-style-type: none;
+    padding-left: 5px;
+}
+
+.intro-content li {
+    margin-bottom: 14px;
+    transition: transform 0.2s ease, padding-left 0.2s ease;
+    padding-left: 0;
+}
+
+.intro-content li:hover {
+    transform: translateX(8px);
+    padding-left: 8px;
+}
+
+.intro-footer {
+    margin-top: 45px;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    padding-top: 30px;
+    position: relative;
+    z-index: 1;
+}
+
+.intro-footer .tagline {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    text-align: center;
+    letter-spacing: 1.5px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.intro-footer .sub-tagline {
+    font-weight: 400;
+    font-size: 1.1rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 10px;
+}
+
+/* Password Toggle */
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #64748b;
+    transition: color 0.2s;
+}
+
+.password-toggle:hover {
+    color: var(--accent-sky);
+}
+
+/* Responsive Design for Mobile */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .login-form-container,
+    .login-intro-container {
+        flex-basis: 100%;
+    }
+
+    .login-intro-container {
+        height: auto;
+        padding: 40px 25px;
+    }
+
+    .intro-content h2 {
+        font-size: 2rem;
+    }
+}
