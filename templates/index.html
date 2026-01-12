@@ -740,7 +740,6 @@
             { id: 8, name: 'expectedBenefits', label: 'Expected Benefits / ROI', type: 'textarea', required: true, placeholder: 'e.g., Cost savings, efficiency gains.', className: 'md:col-span-2' },
             { id: 9, name: 'availabilityOfData', label: 'Availability of Data', type: 'radio', required: true, options: ['Yes', 'No'], className: 'md:col-span-2' },
             { id: 10, name: 'dataSources', label: 'Data Sources', type: 'textarea', required: true, placeholder: 'Describe the data sources.', dependsOn: 'availabilityOfData', dependsOnValue: 'Yes', className: '' },
-            { id: 11, name: 'estimatedCost', label: 'Estimated Cost / Resource Need', type: 'textarea', required: true, placeholder: 'e.g., Software licenses, personnel.', className: 'md:col-span-2' },
             { id: 12, name: 'implementationTimeline', label: 'Required Implementation Timeline', type: 'dropdown', required: true, options: ['0–3 months', '3–6 months', '6–12 months', '12+ months'], className: '' },
         ];
 
@@ -786,14 +785,14 @@
                 setNotifications([]);
 
                 // Clear session
-                sessionStorage.removeItem('user');
-                sessionStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
                 setUser(null);
                 setIsLoggedIn(false);
             }, []);
 
             const fetchWithAuth = useCallback(async (url, options = {}) => {
-                const token = sessionStorage.getItem('token');
+                const token = localStorage.getItem('token');
                 const headers = {
                     'Content-Type': 'application/json',
                     ...options.headers,
@@ -838,8 +837,8 @@
             }, [fetchWithAuth]);
 
             useEffect(() => {
-                const storedUser = sessionStorage.getItem('user');
-                const storedToken = sessionStorage.getItem('token');
+                const storedUser = localStorage.getItem('user');
+                const storedToken = localStorage.getItem('token');
 
                 // Clear any existing interval
                 if (notificationIntervalRef.current) {
@@ -890,8 +889,8 @@
                     } else if (loggedInUser.email === 'ceo@adventz.com') {
                         loggedInUser.role = 'ceo';
                     }
-                    sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-                    sessionStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(loggedInUser));
+                    localStorage.setItem('token', token);
                     setUser(loggedInUser);
                     setIsLoggedIn(true);
                     fetchNotifications(loggedInUser.id);
@@ -901,10 +900,10 @@
                 }
             };
 
-            const signup = async (email, fullName, phone, password, confirmPassword) => {
+            const signup = async (email, fullName, phone, password, confirmPassword, otp) => {
                 const response = await fetchWithAuth(`${API_BASE_URL}/signup`, {
                     method: 'POST',
-                    body: JSON.stringify({ email, fullName, phone, password, confirmPassword }),
+                    body: JSON.stringify({ email, fullName, phone, password, confirmPassword, otp }),
                 });
                 const data = await response.json();
                 if (response.ok) {
@@ -1539,7 +1538,7 @@
                 <nav className={`bg-white/95 backdrop-blur-md p-4 app-navbar sticky top-0 z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-lg' : 'shadow-md'}`}>
                     <div className="container mx-auto flex justify-between items-center">
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => history.push('/')}>
-                            <img src="/static/tixly.png" alt="Simon Logo" className="h-28 rounded-md" />
+                            <img src="/static/si2p.png" alt="Simon Logo" className="h-28 rounded-md" />
                             <div className="h-6 w-px bg-gray-300"></div>
                             <span className="text-xl font-bold text-gray-800 pt-1">Innovation Platform</span>
                         </div>
@@ -1758,6 +1757,8 @@
                     const user = JSON.parse(sessionStorage.getItem('user'));
                     if (user?.role === 'admin' || user?.role === 'superadmin') {
                         history.push('/admin-dashboard');
+                    } else if (user?.role === 'ceo' || user?.role === 'hr') {
+                        history.push('/ceo-dashboard');
                     } else {
                         history.push('/submit-idea');
                     }
@@ -1818,9 +1819,9 @@
                                 {/* Logo + Name */}
                                 <div className="flex items-center gap-3">
                                     <img
-                                        src="/static/tixly.png"
+                                        src="/static/si2p.png"
                                         alt="Company Logo"
-                                        className="h-28 rounded-md"
+                                        className="h-20 rounded-md"
                                     />
                                 </div>
 
@@ -1873,7 +1874,7 @@
                                 {/* Left: Text Content */}
                                 <div className="space-y-6 lg:pl-8">
                                     <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 leading-tight">
-                                        Technology-driven Innovation & Execution Linked System
+                                        Technology Innovation & Execution Linked System
                                         <span className="flex items-center gap-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 pb-2 pl-4">
                                             <span>Where Ideas Turn into Action</span>
                                         </span>
@@ -1980,7 +1981,7 @@
                                             <div className="text-sm text-gray-500 uppercase tracking-wider">Presence</div>
                                         </div>
                                         <div>
-                                            <div className="text-3xl font-bold text-green-500 mb-1">75+</div>
+                                            <div className="text-3xl font-bold text-green-500 mb-1">77+</div>
                                             <div className="text-sm text-gray-500 uppercase tracking-wider">Major Projects</div>
                                         </div>
                                     </div>
@@ -2098,7 +2099,7 @@
                     onClose();
                     if (result.user.role === 'superadmin' || result.user.role === 'admin') {
                         history.push('/admin-dashboard');
-                    } else if (result.user.role === 'ceo') {
+                    } else if (result.user.role === 'ceo' || result.user.role === 'hr') {
                         history.push('/ceo-dashboard');
                     } else {
                         history.push('/submit-idea');
@@ -2151,9 +2152,9 @@
                             {/* Logo */}
                             <div className="text-center mb-8">
                                 <img
-                                    src="/static/tixly.png"
+                                    src="/static/si2p.png"
                                     alt="Logo"
-                                    className="h-24 mx-auto mb-6 object-contain rounded-md"
+                                    className="h-20 mx-auto mb-6 object-contain rounded-md"
                                 />
                                 <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 mb-2">Welcome Back</h2>
                                 <p className="text-gray-500 font-medium">Sign in to access your dashboard</p>
@@ -2293,17 +2294,31 @@
 
         // --- components/SignupModal.jsx ---
         const SignupModal = ({ onClose }) => {
+            const [step, setStep] = useState('details'); // 'details' or 'otp'
             const [email, setEmail] = useState('');
             const [fullName, setFullName] = useState('');
             const [phone, setPhone] = useState('');
             const [password, setPassword] = useState('');
             const [confirmPassword, setConfirmPassword] = useState('');
+            const [otp, setOtp] = useState('');
+            const [otpTimer, setOtpTimer] = useState(0);
+
             const [showPassword, setShowPassword] = useState(false);
             const [showConfirmPassword, setShowConfirmPassword] = useState(false);
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
             const [isLoading, setIsLoading] = useState(false);
             const { signup } = useContext(AuthContext);
+
+            useEffect(() => {
+                let interval;
+                if (otpTimer > 0) {
+                    interval = setInterval(() => {
+                        setOtpTimer((prev) => prev - 1);
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [otpTimer]);
 
             const validateEmail = (email) => {
                 return email.endsWith('@adventz.com');
@@ -2322,35 +2337,64 @@
                 return errors;
             };
 
-            const handleSubmit = async (e) => {
+            const handleSendOtp = async () => {
+                setError('');
+                setSuccess('');
+                setIsLoading(true);
+
+                // --- Validation ---
+                if (!email) { setError('Email is required.'); setIsLoading(false); return; }
+                if (!validateEmail(email)) { setError('Only @adventz.com email addresses are allowed.'); setIsLoading(false); return; }
+                if (!fullName) { setError('Full Name is required.'); setIsLoading(false); return; }
+                if (!validatePhone(phone)) { setError('Phone number must be exactly 10 digits.'); setIsLoading(false); return; }
+
+                const passwordErrors = validatePassword(password);
+                if (passwordErrors.length > 0) { setError(`Password must contain ${passwordErrors.join(', ')}`); setIsLoading(false); return; }
+                if (password !== confirmPassword) { setError('Passwords do not match.'); setIsLoading(false); return; }
+
+                try {
+                    // Fix: Using global API_BASE_URL to avoid double /api prefix if API_BASE_URL is '/api'
+                    // If API_BASE_URL is '/api', then we want '/api/send-otp'. 
+                    // To be safe, we check if it already ends with /api
+                    const url = `${API_BASE_URL}/send-otp`;
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        setSuccess(data.message);
+                        setStep('otp');
+                        setOtpTimer(300); // 5 minutes
+                        setTimeout(() => setSuccess(''), 5000);
+                    } else {
+                        setError(data.error || 'Failed to send OTP.');
+                    }
+                } catch (err) {
+                    setError('Network error. Please try again.');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleVerifyAndSignup = async (e) => {
                 e.preventDefault();
                 setError('');
                 setSuccess('');
 
-                // Client-side validation
-                if (!validateEmail(email)) {
-                    setError('Only @adventz.com email addresses are allowed');
-                    return;
-                }
-
-                if (!validatePhone(phone)) {
-                    setError('Phone number must be exactly 10 digits');
-                    return;
-                }
-
-                const passwordErrors = validatePassword(password);
-                if (passwordErrors.length > 0) {
-                    setError(`Password must contain ${passwordErrors.join(', ')}`);
-                    return;
-                }
-
-                if (password !== confirmPassword) {
-                    setError('Passwords do not match');
+                if (!otp) {
+                    setError('Please enter the OTP.');
                     return;
                 }
 
                 setIsLoading(true);
-                const result = await signup(email, fullName, phone, password, confirmPassword);
+
+                // Using AuthContext signup which wraps fetch
+                const result = await signup(email, fullName, phone, password, confirmPassword, otp);
                 setIsLoading(false);
 
                 if (result.success) {
@@ -2362,6 +2406,12 @@
                 } else {
                     setError(result.error);
                 }
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
             };
 
             return (
@@ -2409,7 +2459,7 @@
                             {/* Logo */}
                             <div className="text-center mb-6">
                                 <img
-                                    src="/static/tixly.png"
+                                    src="/static/si2p.png"
                                     alt="Logo"
                                     className="h-20 mx-auto mb-4 object-contain"
                                 />
@@ -2440,41 +2490,88 @@
                                 </div>
                             )}
 
-                            {/* Form - Compact Version */}
-                            <form onSubmit={handleSubmit} className="space-y-3">
-                                <div>
-                                    <label htmlFor="signup-email" className="block text-xs font-semibold text-gray-700 mb-1">Email *</label>
-                                    <input type="email" id="signup-email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your.email@adventz.com" required className="w-full h-9 px-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
-                                </div>
-                                <div>
-                                    <label htmlFor="signup-fullname" className="block text-xs font-semibold text-gray-700 mb-1">Full Name *</label>
-                                    <input type="text" id="signup-fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your Name" required className="w-full h-9 px-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
-                                </div>
-                                <div>
-                                    <label htmlFor="signup-phone" className="block text-xs font-semibold text-gray-700 mb-1">Phone (10 digits) *</label>
-                                    <input type="tel" id="signup-phone" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="1234567890" maxLength="10" required className="w-full h-9 px-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
-                                </div>
-                                <div>
-                                    <label htmlFor="signup-password" className="block text-xs font-semibold text-gray-700 mb-1">Password *</label>
-                                    <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} id="signup-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 chars, 1 upper, 1 lower, 1 number" required className="w-full h-9 px-3 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
-                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">{showPassword ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg></button>
+                            {/* --- Step 1: User Details --- */}
+                            {step === 'details' && (
+                                <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }} className="space-y-3">
+                                    <div>
+                                        <label htmlFor="signup-email" className="block text-xs font-semibold text-gray-700 mb-1">Email *</label>
+                                        <input type="email" id="signup-email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your.email@adventz.com" required className="w-full h-9 px-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
                                     </div>
-                                </div>
-                                <div>
-                                    <label htmlFor="signup-confirm-password" className="block text-xs font-semibold text-gray-700 mb-1">Confirm Password *</label>
-                                    <div className="relative">
-                                        <input type={showConfirmPassword ? "text" : "password"} id="signup-confirm-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" required className="w-full h-9 px-3 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
-                                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">{showConfirmPassword ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg></button>
+                                    <div>
+                                        <label htmlFor="signup-fullname" className="block text-xs font-semibold text-gray-700 mb-1">Full Name *</label>
+                                        <input type="text" id="signup-fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your Name" required className="w-full h-9 px-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
                                     </div>
-                                </div>
-                                <button type="submit" disabled={isLoading} className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transform hover:-translate-y-0.5 transition-all duration-200 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 text-sm">
-                                    {isLoading ? <><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Creating...</span></> : 'Create Account'}
-                                </button>
-                                <div className="text-center mt-3">
-                                    <p className="text-xs text-gray-600">Already have an account? <button type="button" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('openLoginModal')); }} className="font-semibold text-blue-600 hover:text-blue-700 underline">Login</button></p>
-                                </div>
-                            </form>
+                                    <div>
+                                        <label htmlFor="signup-phone" className="block text-xs font-semibold text-gray-700 mb-1">Phone (10 digits) *</label>
+                                        <input type="tel" id="signup-phone" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="1234567890" maxLength="10" required className="w-full h-9 px-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="signup-password" className="block text-xs font-semibold text-gray-700 mb-1">Password *</label>
+                                        <div className="relative">
+                                            <input type={showPassword ? "text" : "password"} id="signup-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 chars, 1 upper, 1 lower, 1 number" required className="w-full h-9 px-3 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
+                                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">{showPassword ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg></button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="signup-confirm-password" className="block text-xs font-semibold text-gray-700 mb-1">Confirm Password *</label>
+                                        <div className="relative">
+                                            <input type={showConfirmPassword ? "text" : "password"} id="signup-confirm-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" required className="w-full h-9 px-3 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-sm" />
+                                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">{showConfirmPassword ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg></button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" disabled={isLoading} className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transform hover:-translate-y-0.5 transition-all duration-200 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 text-sm">
+                                        {isLoading ? <><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Processing...</span></> : 'Create Account'}
+                                    </button>
+                                </form>
+                            )}
+
+                            {/* --- Step 2: OTP Verification --- */}
+                            {step === 'otp' && (
+                                <form onSubmit={handleVerifyAndSignup} className="space-y-4 animate-slideDown">
+                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center mb-2">
+                                        <p className="text-xs text-blue-800">
+                                            We've sent a 6-digit code to <span className="font-bold">{email}</span>.
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="signup-otp" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            Enter Verification Code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="signup-otp"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                            placeholder="------"
+                                            maxLength="6"
+                                            required
+                                            autoFocus
+                                            className="w-full h-12 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 outline-none bg-gray-50 focus:bg-white text-xl tracking-[0.5em] font-mono text-center"
+                                        />
+                                        <div className="flex justify-between items-center mt-2">
+                                            <span className="text-xs text-gray-500">Expires in {formatTime(otpTimer)}</span>
+                                            {otpTimer === 0 ? (
+                                                <button type="button" onClick={handleSendOtp} className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline">Resend Code</button>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 cursor-not-allowed">Resend in {formatTime(otpTimer)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" disabled={isLoading} className="w-full h-10 bg-green-600 hover:bg-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 text-sm mb-2">
+                                        {isLoading ? 'Verifying...' : 'Verify & Complete Signup'}
+                                    </button>
+
+                                    <button type="button" onClick={() => setStep('details')} className="w-full text-center text-xs text-gray-500 hover:text-gray-800">
+                                        &larr; Back to Details
+                                    </button>
+                                </form>
+                            )}
+
+                            <div className="text-center mt-3">
+                                <p className="text-xs text-gray-600">Already have an account? <button type="button" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('openLoginModal')); }} className="font-semibold text-blue-600 hover:text-blue-700 underline">Login</button></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2645,7 +2742,7 @@
                             {/* Logo & Header */}
                             <div className="text-center mb-8">
                                 <img
-                                    src="/static/tixly.png"
+                                    src="/static/si2p.png"
                                     alt="Company Logo"
                                     className="h-24 mx-auto mb-8 object-contain rounded-md"
                                 />
@@ -2927,7 +3024,7 @@
             ];
 
             const isAdmin = userRole === 'admin' || userRole === 'superadmin';
-            const isCEO = userRole === 'ceo';
+            const isCEO = userRole === 'ceo' || userRole === 'hr';
 
             // Merge common items with role-specific items
             const menuItems = isCEO
@@ -2962,19 +3059,19 @@
                     <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-6'} border-b border-gray-200 shrink-0 relative transition-all duration-300`}>
                         {!isCollapsed && (
                             <img
-                                src="/static/tixly.png"
+                                src="/static/si2p.png"
                                 alt="Logo"
                                 className="h-16 object-contain animate-fadeIn rounded-md"
                             />
                         )}
                         {isCollapsed && (
                             <img
-                                src="/static/tixly.png"
+                                src="/static/si2p.png"
                                 alt="Logo"
                                 className="h-8 object-contain animate-fadeIn rounded-md"
                             />
                         )}
-                        {!isCollapsed && <span className="ml-3 text-lg font-bold text-gray-900 animate-fadeIn whitespace-nowrap overflow-hidden">Innovation</span>}
+                        {!isCollapsed && <span className="ml-3 text-lg font-bold text-gray-900 animate-fadeIn whitespace-nowrap overflow-hidden"></span>}
 
                         <button
                             onClick={toggleSidebar}
@@ -2989,10 +3086,12 @@
                     </div>
 
                     {/* CEO Dashboard Label - Only shown for CEO role */}
-                    {userRole === 'ceo' && !isCollapsed && (
+                    {/* CEO Dashboard Label - Only shown for CEO role or HR */}
+                    {(userRole === 'ceo' || userRole === 'hr') && !isCollapsed && (
                         <div className="ceo-dashboard-label">
-                            <span className="ceo-crown-icon">👑</span>
-                            <span className="ceo-dashboard-label-text">CEO DASHBOARD</span>
+                            <span className="ceo-dashboard-label-text">
+                                {userRole === 'ceo' ? 'CEO DASHBOARD' : 'HR DASHBOARD'}
+                            </span>
                         </div>
                     )}
 
@@ -3418,7 +3517,7 @@
                         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                                    <span className="text-3xl">📊</span> CEO Analytics & Insights
+                                    <span className="text-3xl"></span> {user?.role === 'hr' ? 'HR' : 'CEO'} Analytics & Insights
                                 </h1>
                                 <p className="text-gray-500 mt-1">Real-time performance metrics and strategic insights.</p>
                             </div>
@@ -3518,14 +3617,32 @@
             const location = useLocation();
 
             const getInitialFormState = () => {
+                // If editing an existing idea, prefill with its data
+                if (location.state?.idea) {
+                    const ideaData = location.state.idea;
+                    const initialState = {};
+                    formConfig.forEach(field => {
+                        // Use existing data if available, otherwise use empty string
+                        initialState[field.name] = ideaData[field.name] || '';
+                    });
+                    return initialState;
+                }
+
+                // Otherwise use default initialization
                 const initialState = {};
                 formConfig.forEach(field => {
-                    if (field.name === 'employeeName' && user.email) {
-                        try {
-                            const namePart = user.email.split('@')[0];
-                            const formattedName = namePart.split('.').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
-                            initialState[field.name] = formattedName;
-                        } catch (e) {
+                    if (field.name === 'employeeName') {
+                        if (user.fullName) {
+                            initialState[field.name] = user.fullName;
+                        } else if (user.email) {
+                            try {
+                                const namePart = user.email.split('@')[0];
+                                const formattedName = namePart.split('.').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
+                                initialState[field.name] = formattedName;
+                            } catch (e) {
+                                initialState[field.name] = '';
+                            }
+                        } else {
                             initialState[field.name] = '';
                         }
                     } else if (field.name === 'company') {
@@ -3542,7 +3659,17 @@
             const [messageType, setMessageType] = useState('');
             const [submittingStatus, setSubmittingStatus] = useState(null);
 
-
+            // Update form when location.state changes (e.g., when editing a draft)
+            useEffect(() => {
+                if (location.state?.idea) {
+                    const ideaData = location.state.idea;
+                    const updatedFormData = {};
+                    formConfig.forEach(field => {
+                        updatedFormData[field.name] = ideaData[field.name] || '';
+                    });
+                    setFormData(updatedFormData);
+                }
+            }, [location.state, formConfig]);
 
             const handleChange = (e) => {
                 const { name, value } = e.target;
@@ -3948,6 +4075,10 @@
             const [resetModalUser, setResetModalUser] = useState(null);
             const [newPassword, setNewPassword] = useState('');
 
+            // Role Change Modal State
+            const [roleModalUser, setRoleModalUser] = useState(null);
+            const [selectedRole, setSelectedRole] = useState('');
+
             const fetchUsers = useCallback(async () => {
                 setIsLoading(true);
                 try {
@@ -3969,19 +4100,31 @@
                 fetchUsers();
             }, [fetchUsers]);
 
-            const handleRoleChange = async (userId, currentRole) => {
-                const newRole = currentRole === 'admin' ? 'user' : 'admin';
-                const action = newRole === 'admin' ? 'promote this user to Admin' : 'revoke Admin rights from this user';
-                if (!window.confirm(`Are you sure you want to ${action}?`)) return;
+            const openRoleModal = (user) => {
+                setRoleModalUser(user);
+                setSelectedRole(user.role); // Set initial selection to current role
+            };
 
-                const response = await fetchWithAuth(`${API_BASE_URL}/users/${userId}/role`, {
+            const closeRoleModal = () => {
+                setRoleModalUser(null);
+                setSelectedRole('');
+            };
+
+            const handleRoleUpdate = async (e) => {
+                e.preventDefault();
+                if (!roleModalUser) return;
+
+                if (!window.confirm(`Are you sure you want to change ${roleModalUser.email}'s role to ${selectedRole.toUpperCase()}?`)) return;
+
+                const response = await fetchWithAuth(`${API_BASE_URL}/users/${roleModalUser.id}/role`, {
                     method: 'PUT',
-                    body: JSON.stringify({ role: newRole })
+                    body: JSON.stringify({ role: selectedRole })
                 });
 
                 if (response.ok) {
-                    setMessage(`User role updated to ${newRole}`);
+                    setMessage(`User role updated to ${selectedRole}`);
                     fetchUsers();
+                    closeRoleModal();
                     setTimeout(() => setMessage(''), 3000);
                 } else {
                     const data = await response.json();
@@ -4116,13 +4259,13 @@
                                                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                                         <div className="flex justify-center items-center space-x-3">
                                                             <button
-                                                                onClick={() => handleRoleChange(u.id, u.role)}
+                                                                onClick={() => openRoleModal(u)}
                                                                 disabled={u.id === user.id}
                                                                 className={`p-2 rounded-lg transition-colors group relative ${u.id === user.id ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50'}`}
-                                                                title={u.role === 'admin' ? "Demote to User" : "Promote to Admin"}
+                                                                title="Change Role"
                                                             >
                                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                                                 </svg>
                                                             </button>
 
@@ -4211,10 +4354,60 @@
                             </div>
                         </div>
                     )}
+                    {/* Role Change Modal */}
+                    {roleModalUser && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={closeRoleModal}></div>
+                                <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                    <form onSubmit={handleRoleUpdate}>
+                                        <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                            <div className="sm:flex sm:items-start">
+                                                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                                </div>
+                                                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                                        Change User Role
+                                                    </h3>
+                                                    <div className="mt-2">
+                                                        <p className="text-sm text-gray-500 mb-4">
+                                                            Select a new role for <strong>{roleModalUser.email}</strong>.
+                                                        </p>
+                                                        <select
+                                                            value={selectedRole}
+                                                            onChange={(e) => setSelectedRole(e.target.value)}
+                                                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
+                                                        >
+                                                            <option value="user">User</option>
+                                                            <option value="admin">Admin</option>
+                                                            <option value="ceo">CEO</option>
+                                                            <option value="hr">HR</option>
+                                                        </select>
+                                                        <div className="mt-3 text-xs text-gray-400 bg-gray-50 p-2 rounded">
+                                                            <span className="font-semibold">Note:</span> 'CEO' and 'HR' roles share the same Executive Dashboard access.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                            <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                                Update Role
+                                            </button>
+                                            <button type="button" onClick={closeRoleModal} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </DashboardLayout>
             );
         };
-
 
         // --- components/OrganizationIdeas.jsx ---
         const OrganizationIdeas = () => {
@@ -4257,34 +4450,59 @@
             }, [fetchIdeas]);
 
             const handleReaction = async (ideaId, reactionType) => {
+                // Optimistic UI update - assumes weight based on role for immediate feedback
                 setIdeas(prev => prev.map(idea => {
                     if (idea.id === ideaId) {
                         const currentReaction = idea.user_reaction;
                         let newLikes = idea.likes || 0;
                         let newDislikes = idea.dislikes || 0;
-                        let newReaction = reactionType;
-                        let newNetScore = (idea.likes || 0) - (idea.dislikes || 0);
 
+                        // Determine weight components based on role
+                        const isCeo = user.role === 'ceo';
+                        const likeWeight = isCeo ? 10 : 1;
+                        const dislikeWeight = 1; // Always 1 regardless of role
+
+                        let pointChange = 0;
+
+                        // Logic: Remove old reaction effect, add new reaction effect
                         if (currentReaction === reactionType) {
-                            newReaction = null;
-                            if (reactionType === 'like') newLikes--;
-                            else newDislikes--;
+                            // Toggling off
+                            if (reactionType === 'like') {
+                                newLikes--;
+                                pointChange -= likeWeight;
+                            } else {
+                                newDislikes--;
+                                pointChange += dislikeWeight; // removing dislike adds points back
+                            }
                         } else {
+                            // Switching or Adding
                             if (reactionType === 'like') {
                                 newLikes++;
-                                if (currentReaction === 'dislike') newDislikes--;
+                                pointChange += likeWeight;
+                                if (currentReaction === 'dislike') {
+                                    newDislikes--;
+                                    pointChange += dislikeWeight;
+                                }
                             } else {
                                 newDislikes++;
-                                if (currentReaction === 'like') newLikes--;
+                                pointChange -= dislikeWeight;
+                                if (currentReaction === 'like') {
+                                    newLikes--;
+                                    pointChange -= likeWeight;
+                                }
                             }
                         }
+
+                        // Determine new reaction state
+                        const newReaction = currentReaction === reactionType ? null : reactionType;
 
                         return {
                             ...idea,
                             user_reaction: newReaction,
                             likes: newLikes,
                             dislikes: newDislikes,
-                            netScore: newLikes - newDislikes
+                            netScore: (idea.points || 0) + pointChange, // temporary estimate
+                            points: (idea.points || 0) + pointChange
                         };
                     }
                     return idea;
@@ -4300,7 +4518,8 @@
                         const data = await response.json();
                         setIdeas(prev => prev.map(idea => {
                             if (idea.id === ideaId) {
-                                return { ...idea, ...data, netScore: (data.likes || 0) - (data.dislikes || 0) };
+                                // Use backend returned points which are accurate
+                                return { ...idea, ...data, netScore: data.points, points: data.points };
                             }
                             return idea;
                         }));
@@ -4315,9 +4534,10 @@
             };
 
             const sortedIdeas = useMemo(() => {
+                // Use backend points if available, otherwise fallback
                 let sorted = [...ideas].map(i => ({
                     ...i,
-                    netScore: (i.likes || 0) - (i.dislikes || 0)
+                    netScore: i.points !== undefined ? i.points : ((i.likes || 0) - (i.dislikes || 0))
                 }));
 
                 if (filter === 'top') {
@@ -4509,29 +4729,26 @@
                                                     </td>
 
                                                     {/* Impact Score / Reactions */}
+                                                    {/* Impact Score / Reactions */}
                                                     <td className="py-4 px-6 whitespace-nowrap">
                                                         <div className="flex items-center justify-center gap-1 bg-gray-50/80 rounded-lg p-1.5 border border-gray-100 w-fit mx-auto shadow-sm">
-                                                            {!isCeo && (
-                                                                <button
-                                                                    onClick={() => handleReaction(idea.id, 'like')}
-                                                                    className={`p-1 rounded transition-all active:scale-90 hover:bg-white hover:text-blue-600 ${idea.user_reaction === 'like' ? 'text-blue-600 bg-white shadow-sm ring-1 ring-black/5' : 'text-gray-400'}`}
-                                                                    title="Like"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill={idea.user_reaction === 'like' ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                onClick={() => handleReaction(idea.id, 'like')}
+                                                                className={`p-1 rounded transition-all active:scale-90 hover:bg-white hover:text-blue-600 ${idea.user_reaction === 'like' ? 'text-blue-600 bg-white shadow-sm ring-1 ring-black/5' : 'text-gray-400'}`}
+                                                                title="Like"
+                                                            >
+                                                                <svg className="w-4 h-4" fill={idea.user_reaction === 'like' ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                                                            </button>
                                                             <span className={`text-sm font-bold w-6 text-center ${idea.netScore > 0 ? 'text-green-600' : (idea.netScore < 0 ? 'text-red-500' : 'text-gray-500')}`}>
                                                                 {idea.netScore || 0}
                                                             </span>
-                                                            {!isCeo && (
-                                                                <button
-                                                                    onClick={() => handleReaction(idea.id, 'dislike')}
-                                                                    className={`p-1 rounded transition-all active:scale-90 hover:bg-white hover:text-red-500 ${idea.user_reaction === 'dislike' ? 'text-red-500 bg-white shadow-sm ring-1 ring-black/5' : 'text-gray-400'}`}
-                                                                    title="Dislike"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill={idea.user_reaction === 'dislike' ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" /></svg>
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                onClick={() => handleReaction(idea.id, 'dislike')}
+                                                                className={`p-1 rounded transition-all active:scale-90 hover:bg-white hover:text-red-500 ${idea.user_reaction === 'dislike' ? 'text-red-500 bg-white shadow-sm ring-1 ring-black/5' : 'text-gray-400'}`}
+                                                                title="Dislike"
+                                                            >
+                                                                <svg className="w-4 h-4" fill={idea.user_reaction === 'dislike' ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" /></svg>
+                                                            </button>
                                                         </div>
                                                     </td>
 
@@ -5515,7 +5732,7 @@
             if (!isLoggedIn) return <Redirect to={{ pathname: "/", state: { openLogin: true } }} />;
             if (allowedRoles && !allowedRoles.includes(user?.role)) {
                 if (user.role === 'superadmin' || user.role === 'admin') return <Redirect to="/admin-dashboard" />;
-                if (user.role === 'ceo') return <Redirect to="/ceo-dashboard" />;
+                if (user.role === 'ceo' || user.role === 'hr') return <Redirect to="/ceo-dashboard" />;
                 return <Redirect to="/submit-idea" />;
             }
             return children;
@@ -5530,7 +5747,19 @@
             return (
                 <div className="font-sans antialiased">
                     <Switch>
-                        <Route exact path="/" component={LandingPage} />
+                        <Route exact path="/" render={() => {
+                            // Auto-redirect logged-in users to appropriate dashboard
+                            if (isLoggedIn && user) {
+                                if (user.role === 'superadmin' || user.role === 'admin') {
+                                    return <Redirect to="/admin-dashboard" />;
+                                } else if (user.role === 'ceo' || user.role === 'hr') {
+                                    return <Redirect to="/ceo-dashboard" />;
+                                } else if (user.role === 'user') {
+                                    return <Redirect to="/submit-idea" />;
+                                }
+                            }
+                            return <LandingPage />;
+                        }} />
 
                         <PrivateRoute path="/review-my-ideas" allowedRoles={['user']}>
                             <ReviewIdeas />
@@ -5547,7 +5776,7 @@
                         </PrivateRoute>
 
                         {/* CEO Routes */}
-                        <PrivateRoute path="/ceo-dashboard" allowedRoles={['ceo']}>
+                        <PrivateRoute path="/ceo-dashboard" allowedRoles={['ceo', 'hr']}>
                             <CeoDashboard />
                         </PrivateRoute>
 

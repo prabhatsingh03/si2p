@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 import jwt
 import functools
 import re
+import smtplib
+import random
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,7 +20,16 @@ load_dotenv()
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'default-secret-key-change-this')
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_HOURS = 24
+JWT_EXPIRATION_HOURS = 720  # 30 days
+# Email Configuration
+SMTP_EMAIL = os.getenv('SMTP_EMAIL')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
+SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
+
+# OTP Storage (In-memory)
+# Format: { 'email@adventz.com': { 'otp': '123456', 'expires_at': datetime_object } }
+otp_store = {}
 
 # Configure the Flask app to look for templates in the 'templates' folder
 # and serve static files from a 'static' folder.
@@ -77,7 +90,8 @@ def init_db():
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
-                role VARCHAR(20) NOT NULL CHECK(role IN ('user', 'admin', 'ceo'))
+                role VARCHAR(20) NOT NULL DEFAULT 'user',
+                full_name VARCHAR(255)
             )
         ''')
         # Create ideas table (without last_edited_at initially for migration purposes)
@@ -150,6 +164,44 @@ def init_db():
             print("Applying migration: Adding 'last_edited_at' column to 'ideas' table.")
             cursor.execute('ALTER TABLE ideas ADD COLUMN last_edited_at VARCHAR(50)')
         
+        # Migration for full_name in users table
+        cursor.execute("SHOW COLUMNS FROM users LIKE 'full_name'")
+        result = cursor.fetchone()
+        if result is None:
+            print("Applying migration: Adding 'full_name' column to 'users' table.")
+            cursor.execute('ALTER TABLE users ADD COLUMN full_name VARCHAR(255)')
+
+        # Migration to update role column check constraint to allow 'hr'
+        # Drop existing check constraint if it exists and add a new one that includes 'hr'
+        try:
+            # Check if the constraint exists
+            cursor.execute("""
+                SELECT CONSTRAINT_NAME 
+                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+                WHERE TABLE_SCHEMA = %s 
+                AND TABLE_NAME = 'users' 
+                AND CONSTRAINT_TYPE = 'CHECK'
+            """, (DB_CONFIG['database'],))
+            constraints = cursor.fetchall()
+            
+            # Drop all check constraints on users table
+            for constraint in constraints:
+                constraint_name = constraint['CONSTRAINT_NAME']
+                print(f"Dropping check constraint: {constraint_name}")
+                cursor.execute(f"ALTER TABLE users DROP CHECK {constraint_name}")
+            
+            # Add new check constraint that includes all valid roles including 'hr'
+            print("Adding updated check constraint for role column")
+            cursor.execute("""
+                ALTER TABLE users 
+                ADD CONSTRAINT users_role_check 
+                CHECK (role IN ('user', 'admin', 'ceo', 'hr', 'superadmin'))
+            """)
+            db.commit()
+        except Exception as e:
+            print(f"Check constraint migration completed or not needed: {e}")
+            pass
+
         # The 'adminComments' column is now obsolete and ignored by the application.
         # No action is needed if it exists in older database files.
 
@@ -164,6 +216,18 @@ def init_db():
             cursor.execute(
                 "INSERT INTO users (email, password, role) VALUES (%s, %s, %s)",
                 (admin_email, hashed_password, 'admin')
+            )
+        
+        # Check if the default CEO exists, if not, create it
+        ceo_email = os.getenv('CEO_EMAIL', 'ceo@adventz.com')
+        ceo_password = os.getenv('CEO_PASSWORD', '12345')
+
+        cursor.execute("SELECT * FROM users WHERE email = %s", (ceo_email,))
+        if cursor.fetchone() is None:
+            hashed_password_ceo = generate_password_hash(ceo_password)
+            cursor.execute(
+                "INSERT INTO users (email, password, role, full_name) VALUES (%s, %s, %s, %s)",
+                (ceo_email, hashed_password_ceo, 'ceo', 'Chief Executive Officer')
             )
         
 
@@ -196,24 +260,99 @@ def token_required(f):
     return decorated
 
 # --- API Endpoints ---
+def send_email_otp(to_email, otp):
+    """Sends an OTP to the specified email address using Gmail SMTP."""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        print("SMTP credentials not configured.")
+        return False
+    
+    msg = MIMEMultipart()
+    msg['From'] = SMTP_EMAIL
+    msg['To'] = to_email
+    msg['Subject'] = "Your Verification OTP - Idea Ticketing System"
+    
+    body = f"""
+    <html>
+      <body>
+        <h2>Email Verification</h2>
+        <p>Your One-Time Password (OTP) for registration is:</p>
+        <h1 style="color: #2563eb; letter-spacing: 5px;">{otp}</h1>
+        <p>This OTP is valid for 5 minutes.</p>
+        <p>If you did not request this code, please ignore this email.</p>
+      </body>
+    </html>
+    """
+    msg.attach(MIMEText(body, 'html'))
+    
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_EMAIL, SMTP_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(SMTP_EMAIL, to_email, text)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return False
+
+@app.route('/api/send-otp', methods=['POST'])
+def send_otp():
+    """Generates and sends an OTP to the user's email."""
+    data = request.get_json()
+    email = data.get('email', '').strip()
+
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    if not email.endswith('@adventz.com'):
+        return jsonify({'error': 'Only @adventz.com email addresses are allowed'}), 400
+
+    # Generate 6-digit OTP
+    otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+    
+    # Store OTP with expiration (5 minutes from now)
+    expiration_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
+    otp_store[email] = {
+        'otp': otp,
+        'expires_at': expiration_time
+    }
+    
+    if send_email_otp(email, otp):
+        return jsonify({'message': 'OTP sent successfully to your email.'}), 200
+    else:
+        return jsonify({'error': 'Failed to send OTP. Please try again later.'}), 500
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
-    """Handles user signup with email domain validation."""
+    """Handles user signup with email domain validation and OTP verification."""
     data = request.get_json()
     email = data.get('email', '').strip()
     full_name = data.get('fullName', '').strip()
     phone = data.get('phone', '').strip()
     password = data.get('password', '')
     confirm_password = data.get('confirmPassword', '')
+    otp = data.get('otp', '').strip()
 
     # Validation: Required fields
-    if not all([email, full_name, phone, password, confirm_password]):
-        return jsonify({'error': 'All fields are required'}), 400
+    if not all([email, full_name, phone, password, confirm_password, otp]):
+        return jsonify({'error': 'All fields are required, including OTP'}), 400
 
     # Validation: Email domain must be @adventz.com
     if not email.endswith('@adventz.com'):
         return jsonify({'error': 'Only @adventz.com email addresses are allowed'}), 400
+
+    # Validation: Verify OTP
+    stored_otp_data = otp_store.get(email)
+    if not stored_otp_data:
+        return jsonify({'error': 'OTP not found or expired. Please request a new one.'}), 400
+    
+    if stored_otp_data['otp'] != otp:
+        return jsonify({'error': 'Invalid OTP'}), 400
+        
+    if datetime.datetime.now() > stored_otp_data['expires_at']:
+        del otp_store[email]
+        return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
 
     # Validation: Password match
     if password != confirm_password:
@@ -240,10 +379,15 @@ def signup():
     try:
         cursor = db.cursor()
         cursor.execute(
-            "INSERT INTO users (email, password, role) VALUES (%s, %s, %s)",
-            (email, hashed_password, 'user')
+            "INSERT INTO users (email, password, role, full_name) VALUES (%s, %s, %s, %s)",
+            (email, hashed_password, 'user', full_name)
         )
         db.commit()
+        
+        # Clear OTP after successful signup
+        if email in otp_store:
+            del otp_store[email]
+            
         return jsonify({'message': 'Account created successfully! Please login to continue.'}), 201
     except pymysql.IntegrityError:
         return jsonify({'error': 'An account with this email already exists'}), 409
@@ -278,13 +422,14 @@ def login():
             'user_id': user['id'],
             'email': user['email'],
             'role': role,
+            'fullName': user.get('full_name', ''),
             'exp': expiration
         }
         token = jwt.encode(token_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
         
         return jsonify({
             'isLoggedIn': True,
-            'user': {'id': user['id'], 'email': user['email'], 'role': role},
+            'user': {'id': user['id'], 'email': user['email'], 'role': role, 'fullName': user.get('full_name', '')},
             'token': token
         }), 200
 
@@ -302,8 +447,11 @@ def get_all_users():
 
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT id, email, role FROM users ORDER BY id DESC')
+    cursor.execute('SELECT id, email, role, full_name FROM users ORDER BY id DESC')
     users = cursor.fetchall()
+    # Map full_name to fullName for frontend consistency if needed, though frontend likely uses specific keys
+    for user in users:
+        user['fullName'] = user.pop('full_name', None)
     return jsonify(users), 200
 
 
@@ -317,8 +465,9 @@ def update_user_role(user_id):
     data = request.get_json()
     new_role = data.get('role')
 
-    if new_role not in ['user', 'admin', 'ceo']:
-        return jsonify({'error': 'Invalid role'}), 400
+    valid_roles = ['user', 'admin', 'ceo', 'hr']
+    if new_role not in valid_roles:
+        return jsonify({'error': f'Invalid role. Must be one of: {", ".join(valid_roles)}'}), 400
 
     db = get_db()
     cursor = db.cursor()
@@ -433,6 +582,14 @@ def handle_ideas():
             SELECT i.*, u.email,
             (SELECT COUNT(*) FROM idea_reactions WHERE idea_id = i.id AND reaction_type = 'like') as likes,
             (SELECT COUNT(*) FROM idea_reactions WHERE idea_id = i.id AND reaction_type = 'dislike') as dislikes,
+            (SELECT COALESCE(SUM(
+                CASE 
+                    WHEN r_u.role = 'ceo' AND ir.reaction_type = 'like' THEN 10
+                    WHEN ir.reaction_type = 'like' THEN 1
+                    WHEN ir.reaction_type = 'dislike' THEN -1
+                    ELSE 0 
+                END
+            ), 0) FROM idea_reactions ir JOIN users r_u ON ir.user_id = r_u.id WHERE ir.idea_id = i.id) as points,
             (SELECT reaction_type FROM idea_reactions WHERE idea_id = i.id AND user_id = %s) as user_reaction
             FROM ideas i 
             JOIN users u ON i.user_id = u.id
@@ -475,7 +632,7 @@ def handle_ideas():
         if where_clauses:
             query += ' WHERE ' + ' AND '.join(where_clauses)
         
-        query += ' ORDER BY i.submissionDate DESC'
+        query += ' ORDER BY points DESC, i.submissionDate DESC' # Ordered by points then date
 
         cursor.execute(query, params)
         ideas = cursor.fetchall()
@@ -528,6 +685,7 @@ def update_delete_idea(idea_id):
     elif request.method == 'DELETE':
         cursor.execute('DELETE FROM comments WHERE idea_id = %s', (idea_id,))
         cursor.execute('DELETE FROM notifications WHERE idea_id = %s', (idea_id,))
+        cursor.execute('DELETE FROM idea_reactions WHERE idea_id = %s', (idea_id,))
         cursor.execute('DELETE FROM ideas WHERE id = %s', (idea_id,))
         db.commit()
         if cursor.rowcount > 0:
@@ -600,17 +758,36 @@ def react_to_idea(idea_id):
     
     db.commit()
 
-    # Return updated counts
+    db.commit()
+
+    # Return updated counts and points
     cursor.execute("SELECT COUNT(*) as count FROM idea_reactions WHERE idea_id = %s AND reaction_type = 'like'", (idea_id,))
     likes = cursor.fetchone()['count']
     
     cursor.execute("SELECT COUNT(*) as count FROM idea_reactions WHERE idea_id = %s AND reaction_type = 'dislike'", (idea_id,))
     dislikes = cursor.fetchone()['count']
 
+    # Calculate points for this idea
+    cursor.execute('''
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN u.role = 'ceo' AND ir.reaction_type = 'like' THEN 10
+                WHEN ir.reaction_type = 'like' THEN 1
+                WHEN ir.reaction_type = 'dislike' THEN -1
+                ELSE 0 
+            END
+        ), 0) as points 
+        FROM idea_reactions ir 
+        JOIN users u ON ir.user_id = u.id 
+        WHERE ir.idea_id = %s
+    ''', (idea_id,))
+    points = cursor.fetchone()['points']
+
     return jsonify({
         'message': message, 
         'likes': likes, 
         'dislikes': dislikes,
+        'points': points,
         'user_reaction': reaction_type if message != 'Reaction removed' else None
     }), 200
 

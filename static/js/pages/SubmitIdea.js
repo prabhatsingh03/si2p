@@ -9,8 +9,25 @@ const SubmitIdea = () => {
 
     const getInitialFormState = () => {
         const initialState = {};
+        const ideaToEdit = location.state?.idea;
+
+        console.log('SubmitIdea Debug:');
+        console.log('location.state:', location.state);
+        console.log('ideaToEdit:', ideaToEdit);
+        console.log('formConfig:', formConfig);
+
         formConfig.forEach(field => {
-            initialState[field.name] = '';
+            if (ideaToEdit && ideaToEdit[field.name] !== undefined) {
+                let value = ideaToEdit[field.name];
+                // Handle array values (e.g., departmentsImpacted) which might come as ["HR"] but form expects "HR"
+                if (Array.isArray(value)) {
+                    value = value.length > 0 ? value[0] : '';
+                }
+                initialState[field.name] = value || '';
+                console.log(`Setting ${field.name} to:`, initialState[field.name]);
+            } else {
+                initialState[field.name] = '';
+            }
         });
         return initialState;
     };
