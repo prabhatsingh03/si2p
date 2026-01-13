@@ -596,6 +596,10 @@ def handle_ideas():
         '''
         params = [g.current_user_id]
         where_clauses = []
+        
+        # Base filter: Only show Drafts if user is the owner
+        where_clauses.append("(i.status != 'Draft' OR i.user_id = %s)")
+        params.append(g.current_user_id)
 
         # Get filter parameters from query string
         search = request.args.get('search')
@@ -756,7 +760,33 @@ def react_to_idea(idea_id):
         cursor.execute('INSERT INTO idea_reactions (idea_id, user_id, reaction_type) VALUES (%s, %s, %s)', (idea_id, g.current_user_id, reaction_type))
         message = 'Reaction added'
     
+    
     db.commit()
+
+    # CEO Reaction Logic: Update Idea Status
+    if g.current_user_role == 'ceo' and message in ['Reaction added', 'Reaction updated']:
+        new_status = None
+        if reaction_type == 'like':
+            new_status = 'Approved'
+        elif reaction_type == 'dislike':
+            new_status = 'Rejected'
+        
+        if new_status:
+            # Get idea details for notification
+            cursor.execute('SELECT user_id, ideaTitle, status FROM ideas WHERE id = %s', (idea_id,))
+            idea = cursor.fetchone()
+            
+            if idea and idea['status'] != new_status:
+                current_time = datetime.datetime.now().isoformat()
+                cursor.execute('UPDATE ideas SET status = %s, last_edited_at = %s WHERE id = %s', (new_status, current_time, idea_id))
+                
+                # Notify the idea owner
+                notif_message = f'The status of your idea "{idea["ideaTitle"]}" has been updated to "{new_status}" by the CEO.'
+                cursor.execute(
+                    'INSERT INTO notifications (user_id, idea_id, message, created_at) VALUES (%s, %s, %s, %s)',
+                    (idea['user_id'], idea_id, notif_message, current_time)
+                )
+                db.commit()
 
     db.commit()
 
